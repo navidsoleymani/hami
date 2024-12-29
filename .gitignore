@@ -51,12 +51,15 @@ local_settings.py
 .venv
 db.sqlite3
 *.sqlite3
+
 /.idea/.gitignore
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/dk-big-prize.iml
 /.idea/misc.xml
 /.idea/vcs.xml
-.idea
+/.idea/*
+.idea/*
+
 .vscode/
 /nvd.py
 /tmp.py
