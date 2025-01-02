@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 
 # this is backend endpoint.
-API_BASE_ADDRESS = 'http://127.0.0.1:8000'
+API_BASE_ADDRESS = 'http://127.0.0.1:20250'
 
 
 def add_goal_endpoint(*args, **kwargs):
