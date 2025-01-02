@@ -15,15 +15,31 @@ logging.basicConfig(
 API_BASE_ADDRESS = 'http://127.0.0.1:8000'
 
 
+def add_goal_endpoint(*args, **kwargs):
+    return f'{API_BASE_ADDRESS}/api/v1/ssa/goals/add/'
+
+
+def delete_goal_endpoint(goal_id, *args, **kwargs):
+    return f'{API_BASE_ADDRESS}/api/v1/ssa/goals/delete/{goal_id}/'
+
+
+def all_goals_endpoint(*args, **kwargs):
+    return f'{API_BASE_ADDRESS}/api/v1/ssa/goals/getlist/'
+
+
+def get_user_goals_endpoint(t_id, *args, **kwargs):
+    return f'{API_BASE_ADDRESS}/api/v1/ssa/goals/getlist/{t_id}/'
+
+
 async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     initial message when user hit `Start` button
     """
     hello_msg = '''Hi {}
-Commands:
+        Commands:
 
-/show_goals
-/add_goal Username follower_count, example: /add_goal navid 1000
+        /show_goals
+        /add_goal Username follower_count, example: /add_goal navid 1000
     '''
     await update.message.reply_text(hello_msg.format(update.effective_user.first_name))
 
@@ -33,7 +49,7 @@ async def show_goals_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     handler to show currently set goals for a telegram user
     """
     keyboard = []
-    resp = requests.get(f"{API_BASE_ADDRESS}/api/get-goals", params={'t_id': update.effective_user.id}).json()
+    resp = requests.get(get_user_goals_endpoint(t_id=update.effective_user.id)).json()
     for i in resp:
         keyboard.append([InlineKeyboardButton(f"{i['user_id']} - {i['follower_count']}",
                                               callback_data=json.dumps({}))])
@@ -46,13 +62,16 @@ async def add_goal_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     a simple handler that add a new goal
     """
     with contextlib.suppress(Exception):
-        requests.get(f'{API_BASE_ADDRESS}/api/add-goal/',
-                     params={'t_id': update.effective_user.id,
-                             'instagram_id': context.args[0],
-                             'follower_count': int(context.args[1])}
-                     )
+        requests.post(
+            add_goal_endpoint(),
+            data={
+                't_id': update.effective_user.id,
+                'instagram_id': context.args[0],
+                'follower_count': int(context.args[1])})
+
         await update.message.reply_text("Tracking Goal added")
-        return None
+        return
+
     await update.message.reply_text(f"Sorry, something went wrong...")
 
 
@@ -70,16 +89,17 @@ async def tracking_job(context: CallbackContext) -> None:
     """
     this function periodically fetch goals from API and check if user hit any
     """
-    goals = requests.get(f'{API_BASE_ADDRESS}/api/get-all-goals').json()
+    goals = requests.get(all_goals_endpoint()).json()
     for goal in goals:
         with contextlib.suppress(Exception):
             # here instead of random.randint we can make an actual call to Instagram or Twitter
             # endpoints and query given user's follower count or anything else
             # here we just use a random generator to show how we can send message to engaged users in telegram Bot API
             if random.randint(0, 100) > 50:
-                await context.bot.send_message(chat_id=goal['telegram_user'],
-                                               text=f"{goal['user_id']} has more than '"
-                                                    f"{goal['follower_count']} followers now!")
+                await context.bot.send_message(
+                    chat_id=goal['telegram_user'],
+                    text=f"{goal['user_id']} has more than '"
+                         f"{goal['follower_count']} followers now!")
 
 
 if __name__ == '__main__':
